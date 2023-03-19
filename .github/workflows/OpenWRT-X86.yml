@@ -6,11 +6,16 @@
 # Copyright (C) 2020 KFERMercer
 #
 
-name: OpenWRT-R4S
+name: OpenWRT-X86
 
 on:
-  schedule:
-    - cron: 0 6 */2 * *
+  repository_dispatch:
+  workflow_dispatch:
+    #inputs:
+      #ssh:
+        #description: 'SSH connection to Actions'
+        #required: false
+        #default: 'false'
 
   push:
     branches: [main]
@@ -26,7 +31,7 @@ env:
 
 jobs:
   build_openwrt:
-    name: Build R4S Firmware
+    name: Build X86 Firmware
     runs-on: ubuntu-latest
     steps:
       - name: Initialization Environment
@@ -172,12 +177,12 @@ jobs:
           cp -rf ./.config ./bin/targets/config.txt
 
           cd ./bin/targets
-          zip -pmq R4S_Firmware_$BUILD_DATE.zip *.*
+          zip -pmq X86_Firmware_$BUILD_DATE.zip *.*
 
       - name: Release Firmware
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: R4S_Firmware_${{env.BUILD_DATE}}
+          tag_name: X86_Firmware_${{env.BUILD_DATE}}
           files: ./lede/bin/targets/*.zip
 
       - name: Delete Old Releases
