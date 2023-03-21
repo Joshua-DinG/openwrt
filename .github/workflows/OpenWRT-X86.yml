@@ -44,6 +44,9 @@ jobs:
     name: Build X86 Firmware
     runs-on: ubuntu-latest
     steps:
+      - name: 检查准备 #Checkout OpenWRT
+        uses: actions/checkout@main
+
       - name: 初始化环境 #Initialization Environment
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -60,9 +63,6 @@ jobs:
           sudo -E apt clean
           sudo -E timedatectl set-timezone "$TZ"
 
-      - name: 检查准备 #Checkout OpenWRT
-        uses: actions/checkout@main
-
       - name: 下载固件源码 #Clone LEDE Code
         run: |
           df -hT $PWD
@@ -73,15 +73,15 @@ jobs:
         run: |
           [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
           chmod +x $DIY_P1_SH
-          cd openwrt
+          cd ./openwrt
           $GITHUB_WORKSPACE/$DIY_P1_SH
 
 
       - name: 更新源 #Update feeds
-        run: cd openwrt && ./scripts/feeds update -a
+        run: cd ./openwrt && ./scripts/feeds update -a
 
       - name: 安装源 #Install feeds
-        run: cd openwrt && ./scripts/feeds install -a
+        run: cd ./openwrt && ./scripts/feeds install -a
 
       - name: script2自定义设置 #Load custom configuration
         run: |
@@ -94,7 +94,7 @@ jobs:
       - name: 下载软件包 #Download Packages
         id: package
         run: |
-          cd openwrt
+          cd ./openwrt
           make defconfig
           make download -j16
           find dl -size -1024c -exec ls -l {} \;
@@ -102,7 +102,7 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          cd openwrt
+          cd ./openwrt
 
           make -j$(nproc) || make -j1 V=s
 
