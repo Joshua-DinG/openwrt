@@ -70,8 +70,11 @@ jobs:
         run: |
           df -hT $PWD
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH lede
+          pwd
+          ls -la
           ln -sf /workdir/lede $GITHUB_WORKSPACE/lede
           pwd
+          ls -la
 
       - name: 自定义配置01
         run: |
@@ -79,6 +82,7 @@ jobs:
           cd lede       
           $GITHUB_WORKSPACE/$DIY_P1_SH 
           pwd
+          ls -la
 
       - name: 更新安装源 #Update Feeds
         run: |
@@ -94,16 +98,19 @@ jobs:
           cd lede       
           $GITHUB_WORKSPACE/$DIY_P2_SH   
           pwd
+          ls -la
 
       - name: 自定义配置 #Create Configuration File
         run: |
           cd ./lede
 
           rm -rf ./tmp && rm -rf ./.config*
+          ls -la
           [ -e $CONFIG_FILE ] && mv $CONFIG_FILE lede/.config
 
           make defconfig
           pwd
+          ls -la
 
       - name: 下载软件包 #Download Packages
         run: |
@@ -111,6 +118,7 @@ jobs:
 
           make download -j16
           pwd
+          ls -la
 
       - name: 开始编译固件 #Compile Firmware
         run: |
