@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检查准备 #Checkout OpenWRT
-        uses: actions/checkout@v2.4.2
+        uses: actions/checkout@v2
 
       - name: 初始化环境 #Initialization Environment
         env:
