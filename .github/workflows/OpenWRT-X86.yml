@@ -113,6 +113,7 @@ jobs:
           echo "======================="
           du -h --max-depth=1 ./bin
           echo "======================="
+          pwd
 
       - name: Package Firmware
         run: |
