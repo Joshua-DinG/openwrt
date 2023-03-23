@@ -141,6 +141,8 @@ jobs:
         with:
           keep_latest: 3
           delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 删除旧工作流程 #Delete Old Workflows
         uses: Mattraks/delete-workflow-runs@v2
