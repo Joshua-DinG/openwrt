@@ -52,7 +52,7 @@ jobs:
           sudo -E apt update
           sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* moby* snap*
           sudo -E apt -y full-upgrade
-          sudo -E apt -y install install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
+          sudo -E apt -y install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
           sudo -E systemctl daemon-reload
           sudo -E apt -y autoremove --purge
           sudo -E apt clean
@@ -70,7 +70,7 @@ jobs:
       - name: Update Plugins
         run: |
           chmod +x $DIY_P1_SH
-          cd lede       
+          cd ./lede       
           $GITHUB_WORKSPACE/$DIY_P1_SH  
 
       - name: Update Feeds
@@ -82,7 +82,7 @@ jobs:
       - name: Update Default Settings
         run: |
           chmod +x $DIY_P2_SH
-          cd lede       
+          cd ./lede       
           $GITHUB_WORKSPACE/$DIY_P2_SH  
 
       - name: Create Configuration File
