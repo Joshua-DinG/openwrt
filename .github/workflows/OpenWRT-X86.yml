@@ -39,10 +39,10 @@ permissions: write-all
 
 jobs:
   build_openwrt:
-    name: Build R4S Firmware
+    name: Build X86 Firmware
     runs-on: ubuntu-latest
     steps:
-      - name: Initialization Environment
+      - name: 初始化环境 #Initialization Environment
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -59,45 +59,45 @@ jobs:
           sudo -E timedatectl set-timezone "$TZ"
           pwd
 
-      - name: Checkout OpenWRT
+      - name: 检查 OpenWrt #Checkout OpenWRT
         uses: actions/checkout@v3
 
-      - name: Clone LEDE Code
+      - name: 克隆 LEDE #Clone LEDE Code
         run: |
           git clone --depth=1 --single-branch $REPO_URL
           pwd
 
-      - name: Update Plugins
+      - name: 更新插件 #Update Plugins
         run: |
           chmod +x $DIY_P1_SH
           cd ./lede       
           $GITHUB_WORKSPACE/$DIY_P1_SH  
 
-      - name: Update Feeds
+      - name: 更新并安装软件包 Feeds #Update Feeds
         run: |
           cd ./lede
           ./scripts/feeds update -a
           ./scripts/feeds install -a
           pwd
-      - name: Update Default Settings
+      - name: 更新配置 #Update Default Settings
         run: |
           chmod +x $DIY_P2_SH
           cd ./lede       
           $GITHUB_WORKSPACE/$DIY_P2_SH  
 
-      - name: Create Configuration File
+      - name: 创建配置文件 #Create Configuration File
         run: |
           cd ./lede
           rm -rf ./tmp && rm -rf ./.config*
           [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./.config
           make defconfig
           pwd
-      - name: Download Packages
+      - name: 下载软件包 #Download Packages
         run: |
           cd ./lede
           make download -j16
           pwd
-      - name: Compile Firmware
+      - name: 编译固件 #Compile Firmware
         run: |
           cd ./lede
           make -j$(nproc) || make -j1 V=s
@@ -109,32 +109,22 @@ jobs:
           du -h --max-depth=1 ./bin
           echo "======================="
 
-      - name: 包固件 #Package Firmware
+      - name: 打包固件 #Package Firmware
         run: |
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
 
-          cd ./lede
-          cp -rf $(find ./bin/targets/ -type f -name '*.img.gz') ./bin/targets/
-          cp -rf ./.config ./bin/targets/config.txt
-
-          cd ./bin/targets
-          zip -pmq R4S_Firmware_$BUILD_DATE.zip *.*
-
       - name: 发布固件 #Release Firmware
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: R4S_Firmware_${{env.BUILD_DATE}}
-          files: ./lede/bin/targets/*.zip
+          tag_name: X86_Firmware_${{env.BUILD_DATE}}
+          files: ./lede/bin/targets/*
           body: |
-            This is OpenWrt firmware for ${{ env.DEVICE_NAME }}
-            * Firmware information
+            OpenWrt X86固件 ${{ env.DEVICE_NAME }}
+            * 固件信息
             Default IP: 192.168.10.1
             Default username: root
             Default password: password
-            Default WIFI name: OpenWrt
-            Default WIFI password: none
-            [WETRANSFER](${{ env.WET_URL }})
 
       - name: 删除旧版本 #Delete Old Releases
         uses: dev-drprasad/delete-older-releases@v0.2.1
