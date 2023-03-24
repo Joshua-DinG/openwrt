@@ -97,6 +97,7 @@ jobs:
           cd ./lede
           make download -j16
           pwd
+          tree
       - name: 编译固件 #Compile Firmware
         run: |
           cd ./lede
@@ -114,7 +115,8 @@ jobs:
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
           
-          #cd ./lede
+          cd ./lede
+          tree
           #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
           #cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
           #cp -rf ./.config ./bin/targets/config.txt
