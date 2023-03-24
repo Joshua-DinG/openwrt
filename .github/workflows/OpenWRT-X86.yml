@@ -118,7 +118,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          path: ./bin/targets/x86/64/*
+          files: ./bin/targets/x86/64/*
           body: |
             OpenWrt X86固件 ${{ env.DEVICE_NAME }}
             * 固件信息
