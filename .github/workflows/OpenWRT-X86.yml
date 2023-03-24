@@ -125,10 +125,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          files: |
-            ./lede/bin/targets/*/*/*.*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: ./lede/bin/targets/*/*/*.*
           body: |
             OpenWrt X86固件 ${{ env.DEVICE_NAME }}
             * 固件信息
@@ -141,6 +138,8 @@ jobs:
         with:
           keep_latest: 3
           delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 删除旧工作流程 #Delete Old Workflows
         uses: Mattraks/delete-workflow-runs@v2
