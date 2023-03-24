@@ -116,14 +116,14 @@ jobs:
           
           cd ./lede
           #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
-          cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
-          cp -rf ./.config ./bin/targets/config.txt
+          #cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
+          #cp -rf ./.config ./bin/targets/config.txt
         
       - name: 发布固件 #Release Firmware
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          files: ./bin/targets/*
+          files: ./bin/targets/*/*/*.*
           body: |
             OpenWrt X86固件 ${{ env.DEVICE_NAME }}
             * 固件信息
