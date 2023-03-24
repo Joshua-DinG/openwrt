@@ -113,12 +113,17 @@ jobs:
         run: |
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
-
+          
+          cd ./lede
+          #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
+          cp -rf $(find ./bin/targets/x86/64/ -maxdepth 1 -type f) ./bin/targets/
+          cp -rf ./.config ./bin/targets/config.txt
+        
       - name: 发布固件 #Release Firmware
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          files: ./bin/targets/x86/64/*
+          files: ./bin/targets/*
           body: |
             OpenWrt X86固件 ${{ env.DEVICE_NAME }}
             * 固件信息
