@@ -116,7 +116,7 @@ jobs:
           
           cd ./lede
           #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
-          cp -rf $(find ./bin/targets/x86/64/ -maxdepth 1 -type f) ./bin/targets/
+          cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
           cp -rf ./.config ./bin/targets/config.txt
         
       - name: 发布固件 #Release Firmware
