@@ -79,13 +79,13 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
           pwd
-          ls -l
+          ls -lA
       - name: 更新配置 #Update Default Settings
         run: |
           chmod +x $DIY_P2_SH
           cd ./lede       
           $GITHUB_WORKSPACE/$DIY_P2_SH  
-          ls -l
+          ls -lA
 
       - name: 创建配置文件 #Create Configuration File
         run: |
@@ -150,9 +150,9 @@ jobs:
           CONFIG_PACKAGE_luci-app-wol=n
           EOF
           
-          ls -l
+          ls -lA
           make defconfig
-          ls -l
+          ls -lA
       - name: 下载软件包 #Download Packages
         run: |
           cd ./lede
