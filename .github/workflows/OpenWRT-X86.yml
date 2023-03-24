@@ -114,7 +114,7 @@ jobs:
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
           
-          cd ./lede
+          #cd ./lede
           #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
           #cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
           #cp -rf ./.config ./bin/targets/config.txt
@@ -123,7 +123,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          files: ./bin/targets/*/*/*.*
+          files: |
+            ./lede/bin/targets/*/*/*.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           body: |
             OpenWrt X86固件 ${{ env.DEVICE_NAME }}
             * 固件信息
@@ -136,8 +139,6 @@ jobs:
         with:
           keep_latest: 3
           delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 删除旧工作流程 #Delete Old Workflows
         uses: Mattraks/delete-workflow-runs@v2
