@@ -26,16 +26,16 @@ env:
   RECENT_LASTEST: 15
   TZ: Asia/Shanghai
 
-permissions: write-all
+#permissions: write-all
 
 jobs:
   Build:
     runs-on: ubuntu-latest
     steps:
-    - name: 检查 OpenWrt #Checkout OpenWRT
+    - name: Checkout OpenWRT
       uses: actions/checkout@v3 
 
-    - name: 初始化环境 #Initialization Environment
+    - name: Initialization Environment
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -51,18 +51,18 @@ jobs:
         sudo -E apt clean
         sudo -E timedatectl set-timezone "$TZ"
 
-    - name: 克隆 LEDE #Clone LEDE Code
+    - name: Clone LEDE Code
       run: |
         git clone --depth=1 --single-branch $REPO_URL
         chmod +x $DIY_P1_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P1_SH
 
-    - name: 更新软件包 Feeds #Update Feeds
+    - name: Update Feeds01
       run:  cd ./lede && ./scripts/feeds update -a
 
-    - name: 安装软件包 Feeds #Update Feeds
+    - name: Update Feeds
       run:  cd ./lede && ./scripts/feeds install -a
 
-    - name: 更新插件 #Update Plugins
+    - name: Update Plugins
       run: chmod +x $DIY_P2_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: Custom Settings
@@ -70,10 +70,10 @@ jobs:
         cd ./lede
         rm -rf ./tmp && rm -rf ./.config*
         cat "$GITHUB_WORKSPACE/$CONFIG_FILE" > .config
-        make defconfig
+        make defconfig && ls -lA && cat .config
 
     - name: Download Packages
-      run: cd ./lede && make -j16 download && ls -lA && cat .config
+      run: cd ./lede && make -j16 download && ls -lA
 
     - name: Compile Firmware
       run: |
