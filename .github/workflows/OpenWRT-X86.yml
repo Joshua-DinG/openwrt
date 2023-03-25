@@ -74,7 +74,12 @@ jobs:
         run: |
           set -e
           cd $GITHUB_WORKSPACE
-          chmod +x bash/diy_script02.sh; cd ./lede; $GITHUB_WORKSPACE/bash/diy_script02.sh
+          chmod +x bash/diy_script02.sh; cd ./lede; $GITHUB_WORKSPACE/bash/diy_script02.sh &
+          echo "Build started in background."
+          # 记下后台进程的PID
+          bg_pid=$!
+          # 等待后台进程完成
+          wait $bg_pid
           echo "Build completed successfully."
 
       #- name: Update Plugins
