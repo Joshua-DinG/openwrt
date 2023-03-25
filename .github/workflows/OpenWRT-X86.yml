@@ -84,6 +84,7 @@ jobs:
           
       - name: Generate Configuration File
         run: |
+          cd ./lede
           ls -lA
           rm -rf ./tmp
           rm -rf ./.config*
