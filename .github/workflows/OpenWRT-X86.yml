@@ -1,21 +1,12 @@
-#
-# <https://github.com/KFERMercer/OpenWrt-CI>
-#
-# Copyright (C) 2019 P3TERX
-#
-# Copyright (C) 2020 KFERMercer
-#
+#=================================================
+# OpenWRT-CI Workflows for Build OpenWRT firmware
+# 
+#=================================================
 
-name: OpenWRT-X86
+name: Build_OpenWRT
 
 on:
-  #repository_dispatch:
   workflow_dispatch:
-    #inputs:
-      #ssh:
-        #description: 'SSH connection to Actions'
-        #required: false
-        #default: 'false'
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -25,6 +16,8 @@ env:
   CONFIG_FILE: config/X86.config
   DIY_P1_SH: bash/diy_script01.sh
   DIY_P2_SH: bash/diy_script02.sh
+  COMMIT_LOG_NUM: 1
+  DEVICE_NAME: X86
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
@@ -36,168 +29,93 @@ env:
 permissions: write-all
 
 jobs:
-  build:
-    name: Build X86 Firmware
+  Build:
     runs-on: ubuntu-latest
     steps:
-      - name: 初始化环境 #Initialization Environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          docker rmi `docker images -q`
-          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
-          sudo -E apt-mark hold grub-efi-amd64-signed
-          sudo -E apt update
-          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* moby* snap*
-          sudo -E apt -y full-upgrade
-          sudo -E apt -y install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
-          sudo -E systemctl daemon-reload
-          sudo -E apt -y autoremove --purge
-          sudo -E apt clean
-          sudo -E timedatectl set-timezone "$TZ"
+    - name: 检查 OpenWrt #Checkout OpenWRT
+      uses: actions/checkout@v3 
 
-      - name: 检查 OpenWrt #Checkout OpenWRT
-        uses: actions/checkout@v3
+    - name: 初始化环境 #Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker rmi `docker images -q`
+        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+        sudo -E apt-mark hold grub-efi-amd64-signed
+        sudo -E apt update
+        sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* moby* snap*
+        sudo -E apt -y full-upgrade
+        sudo -E apt -y install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
+        sudo -E systemctl daemon-reload
+        sudo -E apt -y autoremove --purge
+        sudo -E apt clean
+        sudo -E timedatectl set-timezone "$TZ"
 
-      - name: 克隆 LEDE #Clone LEDE Code
-        run: |
-          git clone --depth=1 --single-branch $REPO_URL
+    - name: 克隆 LEDE #Clone LEDE Code
+      run: |
+        git clone --depth=1 --single-branch $REPO_URL
+        chmod +x $DIY_P1_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P1_SH
 
-      - name: 更新插件 #Update Plugins
-        run: |
-          chmod +x $DIY_P1_SH
-          cd ./lede       
-          $GITHUB_WORKSPACE/$DIY_P1_SH 
+    - name: 更新软件包 Feeds #Update Feeds
+      run:  cd ./lede && ./scripts/feeds update -a
 
-      - name: 更新并安装软件包 Feeds #Update Feeds
-        run: |
-          cd ./lede
+    - name: 安装软件包 Feeds #Update Feeds
+      run:  cd ./lede && ./scripts/feeds install -a
 
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+    - name: 更新插件 #Update Plugins
+      run: chmod +x $DIY_P2_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P2_SH
 
-      - name: Custom Settings
-        run: |
-          chmod +x "$DIY_P2_SH"
-          cd lede
-          "$GITHUB_WORKSPACE/$DIY_P2_SH"
-          
-      - name: Generate Configuration File
-        run: |
-          cd ./lede
-          ls -lA
-          rm -rf ./tmp
-          rm -rf ./.config*
-          touch ./.config
-          #定制R4S固件
-          cat >> .config <<EOF
-          #设置设备
-          CONFIG_TARGET_x86=y
-          #增加参数
-          CONFIG_TARGET_ROOTFS_PARTSIZE=3200
-          CONFIG_TARGET_KERNEL_PARTSIZE=320
-          #删除参数
-          CONFIG_TARGET_ROOTFS_EXT4FS=n
-          #增加组件
-          CONFIG_PACKAGE_ipv6helper=y
-          CONFIG_PACKAGE_ip6tables-extra=y
-          CONFIG_PACKAGE_ip6tables-mod-nat=y
-          CONFIG_PACKAGE_nano=y
-          #增加主题
-          CONFIG_PACKAGE_luci-theme-design=y
-          CONFIG_PACKAGE_luci-theme-argon=y
-          CONFIG_PACKAGE_luci-app-design-config=y
-          CONFIG_PACKAGE_luci-app-argon-config=y
-          #增加插件
-          CONFIG_PACKAGE_luci-app-openclash=y
-          CONFIG_PACKAGE_luci-app-turboacc=y
-          CONFIG_PACKAGE_luci-app-unblockmusic=y
-          CONFIG_PACKAGE_luci-app-turboacc=y
-          CONFIG_PACKAGE_luci-app-dockerman=y
-          CONFIG_PACKAGE_luci-app-advanced=y
-          CONFIG_PACKAGE_luci-app-passwall=y
-          CONFIG_PACKAGE_luci-app-ssr-plus=y
-          CONFIG_PACKAGE_luci-app-store=y
-          CONFIG_PACKAGE_luci-app-vssr=y
-          CONFIG_PACKAGE_luci-app-wizard=y
-          CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          CONFIG_PACKAGE_luci-app-onliner=y
-          CONFIG_PACKAGE_luci-app-bypass=y
-          CONFIG_PACKAGE_luci-app-adguardhome=y
-          CONFIG_PACKAGE_luci-app-alist=y
-          CONFIG_PACKAGE_luci-app-aliddns=y
-          CONFIG_PACKAGE_luci-app-aliyundrive-fuse=y
-          CONFIG_PACKAGE_luci-app-aliyundrive-webdav=y
-          CONFIG_PACKAGE_luci-app-eqos=y
-          CONFIG_PACKAGE_luci-app-ddns-go=y
-          CONFIG_PACKAGE_luci-app-ddnsto=y
-          CONFIG_PACKAGE_luci-app-openvpn=y
-          CONFIG_PACKAGE_luci-app-nps=y
-          CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
-          CONFIG_PACKAGE_luci-app-haproxy-tcp=y
-          CONFIG_PACKAGE_luci-app-guest-wifi=y
-          #删除插件
-          CONFIG_PACKAGE_luci-app-accesscontrol=n
-          CONFIG_PACKAGE_luci-app-ddns=n
-          CONFIG_PACKAGE_luci-app-vlmcsd=n
-          CONFIG_PACKAGE_luci-app-wol=n
-          EOF
-   
-          make defconfig
-          ls -lA
-          
-      - name: 下载软件包 #Download Packages
-        run: |
-          cd ./lede
+    - name: Custom Settings
+      run: |
+        cd ./lede
+        rm -rf ./tmp && rm -rf ./.config*
+        cat "$GITHUB_WORKSPACE/$CONFIG_FILE" > .config
+        make defconfig
 
-          make download -j16
-          cat .config
-      - name: 编译固件 #Compile Firmware
-        run: |
-          cd ./lede
+    - name: Download Packages
+      run: cd ./lede && make -j16 download && ls -lA && cat .config
 
-          make -j$(nproc) || make -j1 V=s
+    - name: Compile Firmware
+      run: |
+        cd ./lede
+        make -j$(nproc) || make -j1 V=s
+        echo "======================="
+        df -h
+        echo "======================="
+        du -h --max-depth=1 ./build_dir
+        echo "======================="
+        du -h --max-depth=1 ./bin
+        echo "======================="        
+ 
+    - name: Package Firmware
+      run: |
+        export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+        echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
+        cd ./lede
+        cp -rf $(find ./bin/targets/ -type f -iname "*$DEVICE_NAME*.*") ./bin/targets/
+        cp -rf ./.config ./bin/targets/config.txt
+        cd ./bin/targets
+        zip -pmq "$DEVICE_NAME"_Firmware_"$BUILD_DATE".zip *.*
 
-          echo "======================="
-          df -h
-          echo "======================="
-          du -h --max-depth=1 ./build_dir
-          echo "======================="
-          du -h --max-depth=1 ./bin
-          echo "======================="
+    - name: Release Firmware
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{env.DEVICE_NAME}}_Firmware_${{env.BUILD_DATE}}
+        files: ./lede/bin/targets/*.zip
+        body: |
+          不要问，更就完事了！
+          地址：192.168.2.1
+          密码：password
 
-      - name: 打包固件 #Package Firmware
-        run: |
-          export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
-          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+    - name: Delete Old Releases
+      uses: dev-drprasad/delete-older-releases@v0.2.1
+      with:
+        keep_latest: 3
+        delete_tags: true
 
-          #cd ./lede
-          #cp -rf $(find ./bin/targets/ -type f -name '*x86*.*') ./bin/targets/
-          #cp -rf ./.config ./bin/targets/config.txt
-          tree
-          #cd ./bin/targets
-          #zip -pmq X86_Firmware_$BUILD_DATE.zip *.*
-
-      - name: Release Firmware
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: X86_Firmware_${{env.BUILD_DATE}}
-          files: ./lede/bin/targets/*/*/*.*
-          body: |
-            OpenWrt X86固件 ${{ env.DEVICE_NAME }}
-            * 固件信息
-            Default IP: 192.168.10.1
-            Default username: root
-            Default password: password
-
-      - name: Delete Old Releases
-        uses: dev-drprasad/delete-older-releases@v0.2.1
-        with:
-          keep_latest: 3
-          delete_tags: true
-
-      - name: Delete Old Workflows
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          retain_days: 1
-          keep_minimum_runs: 3
+    - name: Delete Old Workflows
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        retain_days: 1
+        keep_minimum_runs: 3           
