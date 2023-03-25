@@ -77,12 +77,14 @@ jobs:
           ./scripts/feeds install -a
 
       - name: Custom Settings
-        run: |          
-        [ -e files ] && mv files lede/files
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE lede/.config
-        chmod +x $DIY_P2_SH
-        cd lede
-        $GITHUB_WORKSPACE/$DIY_P2_SH 
+        run: |
+          if [ -e "$CONFIG_FILE" ]; then
+            mv "$CONFIG_FILE" lede/.config
+          fi
+          chmod +x "$DIY_P2_SH"
+          cd lede
+          "$GITHUB_WORKSPACE/$DIY_P2_SH"
+
 
           make defconfig
           ls -lA
