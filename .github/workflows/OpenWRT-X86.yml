@@ -90,8 +90,6 @@ jobs:
           rm -rf ./tmp && rm -rf .config
           ls -lA
           [ -e $CONFIG_FILE ] && mv $CONFIG_FILE .config
-          ls -lA
-          cat .config
 
           make defconfig
           ls -lA
