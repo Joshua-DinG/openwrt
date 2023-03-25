@@ -68,8 +68,8 @@ jobs:
     - name: Custom Settings
       run: |
         cd ./lede
-        rm -rf ./tmp && rm -rf ./.config*
-        cat "$GITHUB_WORKSPACE/$CONFIG_FILE" > .config
+        rm -rf ./tmp && rm -rf ./.config* && ls -lA
+        cat "$GITHUB_WORKSPACE/$config/X86.config" > .config
         make defconfig && ls -lA && cat .config
 
     - name: Download Packages
