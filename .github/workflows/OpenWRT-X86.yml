@@ -69,6 +69,13 @@ jobs:
 
       - name: Update Feeds
         run:  cd ./lede && ./scripts/feeds install -a
+        
+      - name: Update Plugins
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE
+          chmod +x bash/diy_script02.sh; cd ./lede; ./$GITHUB_WORKSPACE/bash/diy_script02.sh
+          echo "Build completed successfully."
 
       #- name: Update Plugins
         #run: chmod +x $DIY_P2_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P2_SH
