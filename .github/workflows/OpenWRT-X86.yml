@@ -85,10 +85,9 @@ jobs:
 
       - name: Custom Settings
         run: |
-          cd ./lede
 
-          rm -rf ./tmp && rm -rf ./.config*
-          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./.config
+          rm -rf ./tmp && rm -rf ./lede/.config*
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./lede/.config
 
           make defconfig
           ls -lA
@@ -119,7 +118,7 @@ jobs:
 
           #cd ./lede
           #cp -rf $(find ./bin/targets/ -type f -name '*x86*.*') ./bin/targets/
-          cp -rf ./.config ./bin/targets/config.txt
+          #cp -rf ./.config ./bin/targets/config.txt
           tree
           #cd ./bin/targets
           #zip -pmq X86_Firmware_$BUILD_DATE.zip *.*
