@@ -74,7 +74,7 @@ jobs:
         run: |
           set -e
           cd $GITHUB_WORKSPACE
-          chmod +x bash/diy_script02.sh; cd ./lede; ./$GITHUB_WORKSPACE/bash/diy_script02.sh
+          chmod +x bash/diy_script02.sh; cd ./lede; $GITHUB_WORKSPACE/bash/diy_script02.sh
           echo "Build completed successfully."
 
       #- name: Update Plugins
