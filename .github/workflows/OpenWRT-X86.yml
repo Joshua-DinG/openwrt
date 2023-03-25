@@ -16,7 +16,9 @@ on:
         #description: 'SSH connection to Actions'
         #required: false
         #default: 'false'
+
 env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
@@ -53,7 +55,6 @@ jobs:
           sudo -E apt -y autoremove --purge
           sudo -E apt clean
           sudo -E timedatectl set-timezone "$TZ"
-          pwd
 
       - name: 检查 OpenWrt #Checkout OpenWRT
         uses: actions/checkout@v3
@@ -61,21 +62,20 @@ jobs:
       - name: 克隆 LEDE #Clone LEDE Code
         run: |
           git clone --depth=1 --single-branch $REPO_URL
-          pwd
 
       - name: 更新插件 #Update Plugins
         run: |
           chmod +x $DIY_P1_SH
           cd ./lede       
-          $GITHUB_WORKSPACE/$DIY_P1_SH  
+          $GITHUB_WORKSPACE/$DIY_P1_SH 
 
       - name: 更新并安装软件包 Feeds #Update Feeds
         run: |
           cd ./lede
+
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          pwd
-          ls -lA
+
       - name: 更新配置 #Update Default Settings
         run: |
           chmod +x $DIY_P2_SH
@@ -83,82 +83,27 @@ jobs:
           $GITHUB_WORKSPACE/$DIY_P2_SH  
           ls -lA
 
-      - name: 创建配置文件 #Create Configuration File
+      - name: Custom Settings
         run: |
           cd ./lede
-          
-          rm -rf ./tmp
-          rm -rf ./.config*
-          touch ./.config
-          #定制R4S固件
-          cat >> .config <<EOF
-          #设置设备
-          CONFIG_TARGET_x86=y
-          CONFIG_TARGET_x86_64=y
-          CONFIG_TARGET_x86_64_DEVICE_generic=y
-          #增加参数
-          CONFIG_TARGET_ROOTFS_PARTSIZE=3200
-          CONFIG_TARGET_KERNEL_PARTSIZE=320
-          #删除参数
-          CONFIG_TARGET_ROOTFS_EXT4FS=n
-          #增加组件
-          CONFIG_PACKAGE_ipv6helper=y
-          CONFIG_PACKAGE_ip6tables-extra=y
-          CONFIG_PACKAGE_ip6tables-mod-nat=y
-          CONFIG_PACKAGE_nano=y
-          #增加主题
-          CONFIG_PACKAGE_luci-theme-design=y
-          CONFIG_PACKAGE_luci-theme-argon=y
-          CONFIG_PACKAGE_luci-app-design-config=y
-          CONFIG_PACKAGE_luci-app-argon-config=y
-          #增加插件
-          CONFIG_PACKAGE_luci-app-openclash=y
-          CONFIG_PACKAGE_luci-app-turboacc=y
-          CONFIG_PACKAGE_luci-app-unblockmusic=y
-          CONFIG_PACKAGE_luci-app-turboacc=y
-          CONFIG_PACKAGE_luci-app-dockerman=y
-          CONFIG_PACKAGE_luci-app-advanced=y
-          CONFIG_PACKAGE_luci-app-passwall=y
-          CONFIG_PACKAGE_luci-app-ssr-plus=y
-          CONFIG_PACKAGE_luci-app-store=y
-          CONFIG_PACKAGE_luci-app-vssr=y
-          CONFIG_PACKAGE_luci-app-wizard=y
-          CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          CONFIG_PACKAGE_luci-app-onliner=y
-          CONFIG_PACKAGE_luci-app-bypass=y
-          CONFIG_PACKAGE_luci-app-adguardhome=y
-          CONFIG_PACKAGE_luci-app-alist=y
-          CONFIG_PACKAGE_luci-app-aliddns=y
-          CONFIG_PACKAGE_luci-app-aliyundrive-fuse=y
-          CONFIG_PACKAGE_luci-app-aliyundrive-webdav=y
-          CONFIG_PACKAGE_luci-app-eqos=y
-          CONFIG_PACKAGE_luci-app-ddns-go=y
-          CONFIG_PACKAGE_luci-app-ddnsto=y
-          CONFIG_PACKAGE_luci-app-openvpn=y
-          CONFIG_PACKAGE_luci-app-nps=y
-          CONFIG_PACKAGE_luci-app-ipsec-vpnd=y
-          CONFIG_PACKAGE_luci-app-haproxy-tcp=y
-          CONFIG_PACKAGE_luci-app-guest-wifi=y
-          #删除插件
-          CONFIG_PACKAGE_luci-app-accesscontrol=n
-          CONFIG_PACKAGE_luci-app-ddns=n
-          CONFIG_PACKAGE_luci-app-vlmcsd=n
-          CONFIG_PACKAGE_luci-app-wol=n
-          EOF
-          
-          ls -lA
+
+          rm -rf ./tmp && rm -rf ./.config*
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ./.config
+
           make defconfig
           ls -lA
       - name: 下载软件包 #Download Packages
         run: |
           cd ./lede
+
           make download -j16
-          pwd
-          tree
+          cat .config
       - name: 编译固件 #Compile Firmware
         run: |
           cd ./lede
+
           make -j$(nproc) || make -j1 V=s
+
           echo "======================="
           df -h
           echo "======================="
@@ -171,14 +116,15 @@ jobs:
         run: |
           export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
-          
-          cd ./lede
+
+          #cd ./lede
+          #cp -rf $(find ./bin/targets/ -type f -name '*x86*.*') ./bin/targets/
+          cp -rf ./.config ./bin/targets/config.txt
           tree
-          #cp -rf $(find ./bin/targets/ -type f -name '*r4s*.*') ./bin/targets/
-          #cp -rf $(find ./bin/targets/*/*/ -maxdepth 1 -type f) ./bin/targets/
-          #cp -rf ./.config ./bin/targets/config.txt
-        
-      - name: 发布固件 #Release Firmware
+          #cd ./bin/targets
+          #zip -pmq X86_Firmware_$BUILD_DATE.zip *.*
+
+      - name: Release Firmware
         uses: softprops/action-gh-release@v1
         with:
           tag_name: X86_Firmware_${{env.BUILD_DATE}}
@@ -190,15 +136,13 @@ jobs:
             Default username: root
             Default password: password
 
-      - name: 删除旧版本 #Delete Old Releases
+      - name: Delete Old Releases
         uses: dev-drprasad/delete-older-releases@v0.2.1
         with:
           keep_latest: 3
           delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 删除旧工作流程 #Delete Old Workflows
+      - name: Delete Old Workflows
         uses: Mattraks/delete-workflow-runs@v2
         with:
           retain_days: 1
