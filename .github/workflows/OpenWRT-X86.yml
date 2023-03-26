@@ -58,7 +58,7 @@ jobs:
       run: |
         git clone --depth=1 --single-branch $REPO_URL
         chmod +x $DIY_P1_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P1_SH
-        la -lA feeds/
+        cd ./lede && la -lA feeds/
     - name: Update Feeds01
       run:  |
         cd ./lede && ./scripts/feeds update -a && ./scripts/feeds install -a
