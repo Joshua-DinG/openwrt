@@ -71,10 +71,11 @@ jobs:
       run: |
         cd ./lede && rm -rf ./tmp && rm -rf ./.config*
         cat $GITHUB_WORKSPACE/config/X86.config > .config
-        make defconfig && ls -lA && cat .config
+        make defconfig
 
     - name: Download Packages
-      run: cd ./lede && make -j16 download
+      run: |
+        cd ./lede && make -j16 download
 
     - name: Compile Firmware
       run: |
