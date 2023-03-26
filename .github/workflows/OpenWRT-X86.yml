@@ -1,17 +1,11 @@
-#
-# <https://github.com/KFERMercer/OpenWrt-CI>
-#
-# Copyright (C) 2019 P3TERX
-#
-# Copyright (C) 2020 KFERMercer
-#
+#=================================================
+# OpenWRT-CI Workflows for Build OpenWRT firmware
+# 
+#=================================================
 
-name: OpenWRT-X86  #设备名请用大写字母
+name: Build_OpenWRT
 
 on:
-  #schedule:
-    #- cron: 0 22 */2 * *
-
   workflow_dispatch:
 
 env:
@@ -32,119 +26,87 @@ env:
   RECENT_LASTEST: 15
   TZ: Asia/Shanghai
 
-permissions: write-all
+#permissions: write-all
 
 jobs:
-  build_openwrt:
-    name: Build Firmware
+  Build:
     runs-on: ubuntu-latest
     steps:
-      - name: Initialization Environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          docker rmi `docker images -q`
-          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
-          sudo -E apt-mark hold grub-efi-amd64-signed
-          sudo -E apt update
-          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* moby* snap*
-          sudo -E apt -y full-upgrade
-          sudo -E apt -y install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
-          sudo -E systemctl daemon-reload
-          sudo -E apt -y autoremove --purge
-          sudo -E apt clean
-          sudo -E timedatectl set-timezone "$TZ"
+    - name: Checkout OpenWRT
+      uses: actions/checkout@v3 
 
-      - name: Checkout OpenWRT
-        uses: actions/checkout@v3
+    - name: Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker rmi `docker images -q`
+        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+        sudo -E apt-mark hold grub-efi-amd64-signed
+        sudo -E apt update
+        sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* moby* snap*
+        sudo -E apt -y full-upgrade
+        sudo -E apt -y install $(curl -fsSL https://github.com/Joshua-DinG/openwrt/raw/main/depends-ubuntu)
+        sudo -E systemctl daemon-reload
+        sudo -E apt -y autoremove --purge
+        sudo -E apt clean
+        sudo -E timedatectl set-timezone "$TZ"
+        export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+        echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
 
-      - name: Clone LEDE Code
-        run: |
-          git clone --depth=1 --single-branch $REPO_URL
-          chmod +x $DIY_P1_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P1_SH
+    - name: Clone LEDE Code
+      run: |
+        git clone --depth=1 --single-branch $REPO_URL
+        chmod +x $DIY_P1_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P1_SH
 
+    - name: Update Feeds01
+      run:  cd ./lede && ./scripts/feeds update -a && ./scripts/feeds install -a
 
-      - name: Update Feeds01
-        run:  cd ./lede && ./scripts/feeds update -a
+    - name: Update Plugins
+      run: |
+        chmod +x $DIY_P2_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P2_SH
 
-      - name: Update Feeds
-        run:  cd ./lede && ./scripts/feeds install -a
-        
-      - name: Update Plugins
-        run: |
-          set -e
-          cd $GITHUB_WORKSPACE
-          chmod +x bash/diy_script02.sh; cd ./lede; $GITHUB_WORKSPACE/bash/diy_script02.sh &
-          echo "Build started in background."
-          # 记下后台进程的PID
-          bg_pid=$!
-          # 等待后台进程完成
-          wait $bg_pid
-          echo "Build completed successfully."
+    - name: Custom Settings
+      run: |
+        cd ./lede && rm -rf ./tmp && rm -rf ./.config*
+        cat $GITHUB_WORKSPACE/config/X86.config > .config
+        make defconfig && ls -lA && cat .config
 
-      #- name: Update Plugins
-        #run: chmod +x $DIY_P2_SH; cd ./lede; $GITHUB_WORKSPACE/$DIY_P2_SH
-        
-      - name: Custom Settings
-        run: |
-          cd ./lede
+    - name: Download Packages
+      run: cd ./lede && make -j16 download
 
-          rm -rf ./tmp && rm -rf ./.config* && ls -lA
-          cat $GITHUB_WORKSPACE/config/X86.config > .config
+    - name: Compile Firmware
+      run: |
+        cd ./lede
+        make -j$(nproc) || make -j1 V=s
+        echo "======================="
+        df -h
+        echo "======================="
+        du -h --max-depth=1 ./build_dir
+        echo "======================="
+        du -h --max-depth=1 ./bin
+        echo "======================="        
 
-          make defconfig && ls -lA && cat .config
+    - name: Release Firmware
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: X86_Firmware_${{env.BUILD_DATE}}
+        files: ./lede/bin/targets/*/*/*.*
+        body: |
+          OpenWrt X86固件 ${{ env.DEVICE_NAME }}
+          * 固件信息
+          Default IP: 192.168.2.88
+          Default username: root
+          Default password: 
 
-      - name: Download Packages
-        run: |
-          cd ./lede
+    - name: Delete Old Releases
+      uses: dev-drprasad/delete-older-releases@v0.2.1
+      with:
+        keep_latest: 3
+        delete_tags: true
 
-          make download -j16
-
-      - name: Compile Firmware
-        run: |
-          cd ./lede
-
-          make -j$(nproc) || make -j1 V=s
-
-          echo "======================="
-          df -h
-          echo "======================="
-          du -h --max-depth=1 ./build_dir
-          echo "======================="
-          du -h --max-depth=1 ./bin
-          echo "======================="
-
-      - name: Package Firmware
-        run: |
-          export BUILD_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
-          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
-          echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
-
-          cd ./lede
-          cp -rf $(find ./bin/targets/ -type f -iname "*$DEVICE_NAME*.*") ./bin/targets/
-          cp -rf ./.config ./bin/targets/config.txt
-
-          cd ./bin/targets
-          zip -pmq "$DEVICE_NAME"_Firmware_"$BUILD_DATE".zip *.*
-
-      - name: Release Firmware
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{env.DEVICE_NAME}}_Firmware_${{env.BUILD_DATE}}
-          files: ./lede/bin/targets/*.zip
-          body: |
-            不要问，更就完事了！
-            地址：192.168.2.1
-            密码：password
-
-      - name: Delete Old Releases
-        uses: dev-drprasad/delete-older-releases@v0.2.1
-        with:
-          keep_latest: 3
-          delete_tags: true
-
-      - name: Delete Old Workflows
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          retain_days: 1
-          keep_minimum_runs: 3
+    - name: Delete Old Workflows
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        retain_days: 1
+        keep_minimum_runs: 3           
