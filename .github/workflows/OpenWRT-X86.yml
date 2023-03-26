@@ -61,7 +61,11 @@ jobs:
         tree 
     - name: Update Feeds01
       run:  |
-        cd ./lede && ./scripts/feeds update -a && ./scripts/feeds install -a
+        cd ./lede && ./scripts/feeds update -a
+        
+    - name: Update Feeds02
+      run:  |
+        cd ./lede && ./scripts/feeds install -a
 
     - name: Update Plugins
       run: |
