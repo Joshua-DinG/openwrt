@@ -17,7 +17,7 @@ sed -i '5i uci set system.@system[0].hostname=DinG' package/lean/default-setting
 # 添加新主题  
 rm -rf ./feeds/luci/themes/luci-theme-argon
 rm -rf ./feeds/haibo/luci-theme-argon
-#git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git ./feeds/luci/themes/luci-theme-argon
+git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git ./package/luci-theme-argon
 # git clone https://github.com/jerrykuku/luci-app-argon-config.git ./package/lean/luci-app-argon-config
 # 主题背景
 svn co https://github.com/Joshua-DinG/openwrt/trunk/argon/video/default ./feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/
